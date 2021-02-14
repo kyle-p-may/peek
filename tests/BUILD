@@ -4,6 +4,6 @@ cc_test(
     copts = ["-Iexternal/gtest/include"],
     deps = [
         "@gtest//:gtest_main",
-        "//src/client:peek_client",
+        "//src/client:grpc_client",
     ],
 )

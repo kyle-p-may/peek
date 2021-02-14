@@ -1,13 +1,13 @@
 load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library")
 
 cc_library(
-    name = "peek_client",
+    name = "grpc_client",
     srcs = [
-        "lib/peek_client.h",
+        "lib/grpc_client.h",
         "lib/client_exceptions.h",
     ],
     hdrs = [
-        "lib/peek_client.h"
+        "lib/grpc_client.h"
     ],
     deps = [
         "//src/common/protos:peek_cc_grpc",

@@ -1,6 +1,6 @@
 #include "gtest/gtest.h"
-#include "peek_client.h"
+#include "grpc_client.h"
 
 TEST(PeekClientTest, WillConstruct) {
-    PeekClient client("test:1234");
+    GrpcClient client("test:1234");
 }

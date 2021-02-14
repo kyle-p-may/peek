@@ -2,34 +2,36 @@ syntax = "proto3";
 option java_package = "peek.grpc";
 package peek;
 
-// Get request and reply
-// The reply returns 0
-// on success and non zero on failure
-// 1: key not a member
-// ...
 message GetRequest {
     string key = 1;
 }
 
 message GetReply {
-    string key = 1;
-    string data = 2;
-    int32 result = 3;
+    string data = 1;
+
+    enum GetReplyType {
+        SUCCESS = 0;
+        UNKNOWN_KEY = 1;
+        SERVER_FAILURE = 2;
+        STREAM_REQ = 3;
+        INVALID_KEY = 4;
+    }
+    GetReplyType result = 2;
 }
 
-// Set request and reply messages
-// The reply from the server returns 0
-// on success and non zero on failure
-// Particularly,
-// 1: duplicate key
-// ...
 message SetRequest {
     string key = 1;
     string data = 2;
 }
 
 message SetReply {
-    int32 result = 1;
+    enum SetReplyType {
+        SUCCESS = 0;
+        SUCCESS_OVERWRITE = 1;
+        SERVER_FAILURE = 2;
+        INVALID_KEY = 3;
+    }
+    SetReplyType result = 1;
 }
 
 service Peek {
