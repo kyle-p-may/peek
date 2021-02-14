@@ -1,0 +1,15 @@
+FROM l.gcr.io/google/bazel:latest AS peekbuild
+RUN apt-get update \
+    && apt-get --assume-yes install \
+        build-essential \
+        autoconf \
+        libtool \
+        pkg-config \
+        vim \
+        curl \
+    && curl -LO https://github.com/protocolbuffers/protobuf/releases/download/v3.13.0/protoc-3.13.0-linux-x86_64.zip \
+    && mkdir /protoc_install \
+    && unzip protoc-3.13.0-linux-x86_64.zip -d /protoc_install
+ENV PATH="/protoc_install/bin:${PATH}"
+WORKDIR /peekbuild/
+ENTRYPOINT /bin/bash
