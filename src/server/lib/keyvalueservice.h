@@ -8,15 +8,15 @@
 
 class KeyValueService {
   public:
-    KeyValueService(std::istream& seed_data) {
-        initialize(seed_data);
-    }
+    KeyValueService() = default;
 
     virtual Value Get(const Key&) = 0;
     virtual void Set(const Key&, const Value&) = 0;
 
+    virtual ~KeyValueService() = default;
+
   private:
-    virtual void initialize(std::istream&) = 0; 
+    virtual void initialize(std::istream&) { return; } 
 };
 
 #endif // KEYVALUESERVICE_H

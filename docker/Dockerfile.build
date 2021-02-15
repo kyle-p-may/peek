@@ -7,9 +7,12 @@ RUN apt-get update \
         pkg-config \
         vim \
         curl \
+        g++\
     && curl -LO https://github.com/protocolbuffers/protobuf/releases/download/v3.13.0/protoc-3.13.0-linux-x86_64.zip \
     && mkdir /protoc_install \
-    && unzip protoc-3.13.0-linux-x86_64.zip -d /protoc_install
+    && unzip protoc-3.13.0-linux-x86_64.zip -d /protoc_install\
+    && g++ --version
 ENV PATH="/protoc_install/bin:${PATH}"
+ENV BAZEL_CXXOPTS="-std=c++14"
 WORKDIR /peekbuild/
 ENTRYPOINT /bin/bash

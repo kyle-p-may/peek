@@ -4,6 +4,8 @@
 #include <exception>
 #include <string>
 
+namespace peek {
+
 class MalformedKeyException : std::runtime_error {
   public:
     MalformedKeyException(const std::string& bad_key)
@@ -25,4 +27,5 @@ class DuplicateKeyException : std::runtime_error {
     {}
 };
 
+}
 #endif // CLIENT_EXCEPTIONS_H

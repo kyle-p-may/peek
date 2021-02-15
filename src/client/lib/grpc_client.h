@@ -9,10 +9,11 @@
 
 #include <grpcpp/grpcpp.h>
 
+#include "generic_client.h"
 #include "src/common/protos/peek.grpc.pb.h"
 using peek::Peek;
 
-class GrpcClient {
+class GrpcClient : public Client {
   public:
     /**
      * @param address IP address and port, in the following format
@@ -24,21 +25,12 @@ class GrpcClient {
         throw std::logic_error("PeekClient ctor not implemented");
     }
 
-    /**
-     * @brief   This function will return the value for the key
-     *          if it exists; if not, it will throw an exception
-     *          (NonExistentKeyException)
-     */
-    std::string Get(const std::string& key)
+    std::string Get(const std::string& key) override
     {
         throw std::logic_error("PeekClient::Get not implemented");
     }
 
-    /**
-     * @brief   Sets the value associated with key to value (overwriting 
-     *          previous values if the key already existed)
-     */
-    void Set(const std::string& key, const std::string& value)
+    void Set(const std::string& key, const std::string& value) override
     {
         throw std::logic_error("PeekClient::Set not implemented");
     }
