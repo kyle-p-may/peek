@@ -1,10 +1,12 @@
 cc_test(
-    name = "client_tests",
-    srcs = glob(["client/*.cc"]),
+    name = "record_tests",
+
+    srcs = glob(["record/*.cc"]),
+
     copts = ["-Iexternal/gtest/include"],
+
     deps = [
         "@gtest//:gtest_main",
-        "//src/client:client",
-        "//src/server:server",
+        "//peeklib:peek_storage",
     ],
 )

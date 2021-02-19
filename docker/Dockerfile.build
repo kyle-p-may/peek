@@ -11,8 +11,10 @@ RUN apt-get update \
     && curl -LO https://github.com/protocolbuffers/protobuf/releases/download/v3.13.0/protoc-3.13.0-linux-x86_64.zip \
     && mkdir /protoc_install \
     && unzip protoc-3.13.0-linux-x86_64.zip -d /protoc_install\
-    && g++ --version
+    && g++ --version\
+    && mkdir /peekdata
 ENV PATH="/protoc_install/bin:${PATH}"
-ENV BAZEL_CXXOPTS="-std=c++14"
+ENV BAZEL_CXXOPTS="-std=c++17"
+ENV CC="g++"
 WORKDIR /peekbuild/
 ENTRYPOINT /bin/bash
