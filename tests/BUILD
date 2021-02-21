@@ -5,6 +5,10 @@ cc_test(
 
     copts = ["-Iexternal/gtest/include"],
 
+    defines = [
+        "PEEK_DEBUG",
+    ],
+
     deps = [
         "@gtest//:gtest_main",
         "//peeklib:peek_storage",

@@ -5,10 +5,12 @@
 #include <ios>
 #include <iostream>
 #include <fstream>
+#include <sstream>
 #include <string>
 
 #include "peeklib/storage/exceptions.h"
 #include "peeklib/util/crc.h"
+#include "peeklib/util/debug.h"
 #include "peeklib/util/writehelper.h"
 
 Record::Record(std::shared_ptr<std::string> key_p, std::shared_ptr<std::string> value_p)
@@ -25,6 +27,10 @@ Record::Record(std::ifstream& input, std::streampos pos)
     load(input, pos);
 }
 
+Record::Record()
+: key(nullptr), value(nullptr)
+{ }
+
 bool
 Record::equal(const Record& other) const
 {
@@ -36,8 +42,8 @@ int
 Record::calculatePaddingSize() const
 {
     int headerSize = 32;
-    int keyAndCheckSize = key->size() + 4;
-    int valueAndCheckSize = value->size() + 4;
+    int keyAndCheckSize = key->size() + sizeof(Checksum_t);
+    int valueAndCheckSize = value->size() + sizeof(Checksum_t);
     int currentSize = headerSize + keyAndCheckSize + valueAndCheckSize;
 
     return (peek::storage::kBlockSize - (currentSize % peek::storage::kBlockSize)); 
@@ -99,6 +105,11 @@ Record::write(std::ofstream& output, std::streampos absolute)
     const Checksum_t valChecksum = CRC32::Calculate(value->begin(), value->end());
     Checksum_t headerChecksum;
 
+    auto totalSize = kHeaderSize + keySize + sizeof(Checksum_t) +
+        valSize + sizeof(Checksum_t) + paddingSize;
+    
+    assert((totalSize % peek::storage::kBlockSize) == 0);
+
     *peek::util::index<int>(header, kValidPos) = valid;
     *peek::util::index<int>(header, kKeySizePos) = keySize;
     *peek::util::index<int>(header, kValSizePos) = valSize;
@@ -122,13 +133,14 @@ Record::write(std::ofstream& output, std::streampos absolute)
     }
 }
 
-void
+int
 Record::load(std::ifstream& input, std::streampos absolute)
 {
+    // TODO: handle the case that input is not opened correctly
     int valid;
     int keySize;
-    int valSize;
     int paddingSize;
+    int valSize;
     Checksum_t headerChecksum_fromfile, valChecksum_fromfile, keyChecksum_fromfile;
 
     char header[kHeaderSize];
@@ -153,6 +165,15 @@ Record::load(std::ifstream& input, std::streampos absolute)
     }
 
     auto headerChecksum = CRC32::Calculate(header, header + kCheckPos);
+
+    auto log_header = [&]() {
+        std::ostringstream out;
+        out << "header checksum" << std::endl <<
+            "from file: " << headerChecksum_fromfile << std::endl <<
+            "just now: " << headerChecksum << std::endl;
+        return out.str();
+    }; Debug::log(log_header);
+
     if (headerChecksum  != headerChecksum_fromfile) {
         throw peek::storage::CorruptedData("Error: header corrupted");
     }
@@ -185,4 +206,8 @@ Record::load(std::ifstream& input, std::streampos absolute)
     if (valChecksum != valChecksum_fromfile) {
         throw peek::storage::CorruptedData("Error: value corrupted");
     }
+
+    // the total size of this record on disk, returned
+    // the header, the key, the value, the padding, and the two checksums for val and key
+    return kHeaderSize + keySize + valSize + paddingSize + (2 * sizeof(Checksum_t));
 }

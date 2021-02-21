@@ -15,9 +15,10 @@ class Record : public Persistent {
         Record(std::string key_p, std::string value_p);
         Record(std::ifstream& input, std::streampos pos);
         Record(std::shared_ptr<std::string> key_p, std::shared_ptr<std::string> value_p);
+        Record();
 
         void write(std::ofstream& output, std::streampos absolute) override;
-        void load(std::ifstream& input, std::streampos absolute) override;
+        int load(std::ifstream& input, std::streampos absolute) override;
 
         bool equal(const Record& other) const;
 
