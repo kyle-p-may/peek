@@ -7,6 +7,7 @@
 #include <fstream>
 #include <sstream>
 #include <string>
+#include <tuple>
 
 #include "peeklib/storage/exceptions.h"
 #include "peeklib/util/crc.h"
@@ -91,73 +92,100 @@ void Record::read(std::ifstream& input, int n, BackInserterT insert)
  * A side effect of this function is that it can modify the
  * read/write position of the given stream
  */
-void
+int
 Record::write(std::ofstream& output, std::streampos absolute)
 {
-    // first, create header
     char header[kHeaderSize];
-
-    const int valid = 1;
-    const int keySize = int(key->size());
-    const int valSize = int(value->size());
-    const int paddingSize = calculatePaddingSize();
     const Checksum_t keyChecksum = CRC32::Calculate(key->begin(), key->end());
     const Checksum_t valChecksum = CRC32::Calculate(value->begin(), value->end());
-    Checksum_t headerChecksum;
-
-    auto totalSize = kHeaderSize + keySize + sizeof(Checksum_t) +
-        valSize + sizeof(Checksum_t) + paddingSize;
-    
-    assert((totalSize % peek::storage::kBlockSize) == 0);
-
-    *peek::util::index<int>(header, kValidPos) = valid;
-    *peek::util::index<int>(header, kKeySizePos) = keySize;
-    *peek::util::index<int>(header, kValSizePos) = valSize;
-    *peek::util::index<int>(header, kPadSizePos) = paddingSize;
-    headerChecksum = CRC32::Calculate(header, header + kCheckPos);
-    *peek::util::index<Checksum_t>(header, kCheckPos) = headerChecksum;
+    (void) seedHeader(header);
 
     // now, write everything to disk
     try {
         output.seekp(absolute);
         output.write(header, kHeaderSize);
 
-        output.write(key->c_str(), keySize);
+        output.write(key->c_str(), key->size());
         output.write((char*)(&keyChecksum), sizeof(keyChecksum));
 
-        output.write(value->c_str(), valSize);
+        output.write(value->c_str(), value->size());
         output.write((char*)(&valChecksum), sizeof(valChecksum));
 
     } catch (std::ios_base::failure& e) {
         throw peek::storage::FailedWrite("Error: failed record write");
     }
+
+    return FileSize();
+}
+
+Checksum_t
+Record::seedHeader(char* const header)
+{
+    const int valid = 1;
+    const int keySize = int(key->size());
+    const int valSize = int(value->size());
+    const int paddingSize = calculatePaddingSize();
+
+    *peek::util::index<int>(header, kValidPos) = valid;
+    *peek::util::index<int>(header, kKeySizePos) = keySize;
+    *peek::util::index<int>(header, kValSizePos) = valSize;
+    *peek::util::index<int>(header, kPadSizePos) = paddingSize;
+    const Checksum_t headerChecksum = CRC32::Calculate(header, header + kCheckPos);
+    *peek::util::index<Checksum_t>(header, kCheckPos) = headerChecksum;
+
+    return headerChecksum;
 }
 
 int
 Record::load(std::ifstream& input, std::streampos absolute)
 {
-    // TODO: handle the case that input is not opened correctly
-    int valid;
-    int keySize;
-    int paddingSize;
-    int valSize;
-    Checksum_t headerChecksum_fromfile, valChecksum_fromfile, keyChecksum_fromfile;
-
-    char header[kHeaderSize];
+    if (!input.is_open()) {
+        throw peek::storage::FailedRead("Error: Record::load input not open");
+    }
 
     // first read the header
+    char header[kHeaderSize];
     try {
         input.seekg(absolute);
         input.read((char*)(header), kHeaderSize);
-
-        valid = *peek::util::index<int>(header, kValidPos);
-        keySize = *peek::util::index<int>(header,kKeySizePos);
-        valSize = *peek::util::index<int>(header, kValSizePos);
-        paddingSize = *peek::util::index<int>(header, kPadSizePos);
-        headerChecksum_fromfile = *peek::util::index<Checksum_t>(header, kCheckPos);
     } catch (std::ios_base::failure& e) {
         throw peek::storage::FailedRead("Error: failed reading header");
     }
+
+    int keySize, valSize, paddingSize;
+    std::tie(keySize, valSize, paddingSize) = parseHeader(header);
+
+    // if successful, make buffers for key and value
+    key = std::make_shared<std::string>();
+    value = std::make_shared<std::string>();
+    key->reserve(keySize);
+    value->reserve(valSize);
+
+    // read the rest of the record
+    Checksum_t valChecksum_fromfile, keyChecksum_fromfile;
+    try {
+        read(input, keySize, std::back_inserter(*key));
+        input.read((char*)(&keyChecksum_fromfile), sizeof(keyChecksum_fromfile));
+        read(input, valSize, std::back_inserter(*value));
+        input.read((char*)(&valChecksum_fromfile), sizeof(valChecksum_fromfile));
+
+    } catch (std::ios_base::failure& e) {
+        throw peek::storage::FailedRead("Error: failed reading key and val");
+    }
+
+    validateRead(keyChecksum_fromfile, valChecksum_fromfile);
+
+    return FileSize();
+}
+
+std::tuple<int, int, int>
+Record::parseHeader(const char* const header) {
+
+    const int valid = *peek::util::index<int>(header, kValidPos);
+    const int keySize = *peek::util::index<int>(header,kKeySizePos);
+    const int valSize = *peek::util::index<int>(header, kValSizePos);
+    const int paddingSize = *peek::util::index<int>(header, kPadSizePos);
+    const Checksum_t headerChecksum_fromfile = *peek::util::index<Checksum_t>(header, kCheckPos);
 
     // process header
     if (valid != 1) {
@@ -178,23 +206,12 @@ Record::load(std::ifstream& input, std::streampos absolute)
         throw peek::storage::CorruptedData("Error: header corrupted");
     }
 
-    // if successful, make buffers for key and value
-    key = std::make_shared<std::string>();
-    value = std::make_shared<std::string>();
-    key->reserve(keySize);
-    value->reserve(valSize);
+    return std::make_tuple(keySize, valSize, paddingSize);
+}
 
-    // read the rest of the record
-    try {
-        read(input, keySize, std::back_inserter(*key));
-        input.read((char*)(&keyChecksum_fromfile), sizeof(keyChecksum_fromfile));
-        read(input, valSize, std::back_inserter(*value));
-        input.read((char*)(&valChecksum_fromfile), sizeof(valChecksum_fromfile));
-
-    } catch (std::ios_base::failure& e) {
-        throw peek::storage::FailedRead("Error: failed reading key and val");
-    }
-
+void
+Record::validateRead(const Checksum_t keyChecksum_fromfile, const Checksum_t valChecksum_fromfile)
+{
     // process the key and value checksums
     auto keyChecksum = CRC32::Calculate(key->begin(), key->end());
     auto valChecksum = CRC32::Calculate(value->begin(), value->end());
@@ -206,8 +223,12 @@ Record::load(std::ifstream& input, std::streampos absolute)
     if (valChecksum != valChecksum_fromfile) {
         throw peek::storage::CorruptedData("Error: value corrupted");
     }
+}
 
-    // the total size of this record on disk, returned
+int
+Record::FileSize() const
+{
     // the header, the key, the value, the padding, and the two checksums for val and key
-    return kHeaderSize + keySize + valSize + paddingSize + (2 * sizeof(Checksum_t));
+    return kHeaderSize + key->size() + value->size() +
+        calculatePaddingSize() + (2 * sizeof(Checksum_t));
 }

@@ -5,6 +5,7 @@
 #include <fstream>
 #include <memory>
 #include <string>
+#include <tuple>
 
 #include "peeklib/storage/constants.h"
 #include "peeklib/storage/persistent.h"
@@ -17,10 +18,12 @@ class Record : public Persistent {
         Record(std::shared_ptr<std::string> key_p, std::shared_ptr<std::string> value_p);
         Record();
 
-        void write(std::ofstream& output, std::streampos absolute) override;
+        int write(std::ofstream& output, std::streampos absolute) override;
         int load(std::ifstream& input, std::streampos absolute) override;
 
         bool equal(const Record& other) const;
+
+        int FileSize() const;
 
     private:
         std::shared_ptr<std::string> key;
@@ -30,6 +33,13 @@ class Record : public Persistent {
 
         template <typename BackInserterT>
         static void read(std::ifstream& input, int n, BackInserterT insert);
+        
+        std::tuple<int,int,int> parseHeader(const char* const header);
+
+        void validateRead(const Checksum_t keyChecksum_fromfile,
+            const Checksum_t valChecksum_fromfile);
+
+        Checksum_t seedHeader(char* const header_buffer);
 
         const int kHeaderSize = 32;
         const int kValidPos = 0;
