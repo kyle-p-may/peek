@@ -20,33 +20,36 @@ class Record : public Persistent {
 
         int write(std::ofstream& output, std::streampos absolute) override;
         int load(std::ifstream& input, std::streampos absolute) override;
-
         bool equal(const Record& other) const;
-
         int FileSize() const;
 
     private:
+        // data members
         std::shared_ptr<std::string> key;
         std::shared_ptr<std::string> value;
 
+        // internal struct for header and associated functions
+        struct Header {
+            int valid;
+            int keySize;
+            int valSize;
+            int padSize;
+            char padding[16 - sizeof(Checksum_t)];
+            Checksum_t checksum;
+        } __attribute__((packed));
+        const int kHeaderSize = sizeof(Header);
+
+        std::unique_ptr<Header> createHeader();
+        char* headerBegin(std::unique_ptr<Header>& header);
+
+        // private member helper functions
         int calculatePaddingSize() const;
 
         template <typename BackInserterT>
         static void read(std::ifstream& input, int n, BackInserterT insert);
-        
-        std::tuple<int,int,int> parseHeader(const char* const header);
 
         void validateRead(const Checksum_t keyChecksum_fromfile,
             const Checksum_t valChecksum_fromfile);
-
-        Checksum_t seedHeader(char* const header_buffer);
-
-        const int kHeaderSize = 32;
-        const int kValidPos = 0;
-        const int kKeySizePos = kValidPos + sizeof(int);
-        const int kValSizePos = kKeySizePos + sizeof(int);
-        const int kPadSizePos = kValSizePos + sizeof(int);
-        const int kCheckPos = kHeaderSize - sizeof(Checksum_t);
 };
 
 #endif // RECORD_H
