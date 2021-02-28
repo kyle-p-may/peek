@@ -8,6 +8,7 @@ cc_library(
     hdrs = [
         "storage/record.h",
         "util/crc.h",
+        "storage/logentry.h",
     ],
 
     visibility = [

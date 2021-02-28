@@ -1,0 +1,6 @@
+#ifndef PEEKLIB_STORAGE_FILE_H
+#define PEEKLIB_STORAGE_FILE_H
+
+using FileId = int;
+
+#endif // PEEKLIB_STORAGE_FILE_H
