@@ -6,8 +6,8 @@
 
 class Persistent {
     public:
-        virtual int write(std::ofstream& output, std::streampos absolute) = 0;
-        virtual int load(std::ifstream& input, std::streampos absolute) = 0;
+        virtual int write(std::fstream& output, std::streampos absolute) = 0;
+        virtual int load(std::fstream& input, std::streampos absolute) = 0;
         virtual ~Persistent() = default;
 };
 

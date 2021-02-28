@@ -22,7 +22,7 @@ Record::Record(std::string key_p, std::string value_p)
 : Record(std::make_shared<std::string>(key_p), std::make_shared<std::string>(value_p))
 { }
 
-Record::Record(std::ifstream& input, std::streampos pos)
+Record::Record(std::fstream& input, std::streampos pos)
 : key(nullptr), value(nullptr)
 {
     load(input, pos);
@@ -70,14 +70,8 @@ Record::createHeader()
     return header;
 }
 
-char*
-Record::headerBegin(std::unique_ptr<Record::Header>& header)
-{
-    return reinterpret_cast<char*>(header.get());
-}
-
 template <typename BackInserterT>
-void Record::read(std::ifstream& input, int n, BackInserterT insert)
+void Record::read(std::fstream& input, int n, BackInserterT insert)
 {
     char c;
 
@@ -88,38 +82,11 @@ void Record::read(std::ifstream& input, int n, BackInserterT insert)
 }
 
 /**
- * == START HEADER
- * Valid (4 byte)
- * Key Size (4 bytes)
- * Value size (4 bytes)
- * Padding size (4 bytes)
- * Expansion Space (12 bytes)
- * Header checksum (4 bytes)
- * == END HEADER
- * Key
- * Key Checksum (4 bytes)
- * ==
- * Value
- * Value Checksum (4 bytes)
- * ==
- * Padding
- * 
- * ============================
- * This is the format of a single record on disk
- * The header is 32 bytes in total (with empty slots for expansion)
- * and then each section has its own checksum
- * 
- * The total size of the record is:
- * 32 + 8 + padding size + key size + value size
- * 
- * Padding size is added to ensure that it is to the nearest
- * peek::storage::kBlockSize multiple
- * 
  * A side effect of this function is that it can modify the
  * read/write position of the given stream
  */
 int
-Record::write(std::ofstream& output, std::streampos absolute)
+Record::write(std::fstream& output, std::streampos absolute)
 {
     if (!output.is_open()) {
         throw peek::storage::FailedWrite("Error: Record::write stream not open");
@@ -132,7 +99,7 @@ Record::write(std::ofstream& output, std::streampos absolute)
     // now, write everything to disk
     try {
         output.seekp(absolute);
-        output.write(headerBegin(header), kHeaderSize);
+        output.write(reinterpret_cast<char*>(header.get()), kHeaderSize);
 
         output.write(key->c_str(), key->size());
         output.write((char*)(&keyChecksum), sizeof(keyChecksum));
@@ -150,7 +117,7 @@ Record::write(std::ofstream& output, std::streampos absolute)
 }
 
 int
-Record::load(std::ifstream& input, std::streampos absolute)
+Record::load(std::fstream& input, std::streampos absolute)
 {
     if (!input.is_open()) {
         throw peek::storage::FailedRead("Error: Record::load input not open");
@@ -159,7 +126,7 @@ Record::load(std::ifstream& input, std::streampos absolute)
     auto header = std::make_unique<Header>();
     try {
         input.seekg(absolute);
-        input.read(headerBegin(header), kHeaderSize);
+        input.read(reinterpret_cast<char*>(header.get()), kHeaderSize);
     } catch (std::ios_base::failure& e) {
         throw peek::storage::FailedRead("Error: failed reading header");
     }

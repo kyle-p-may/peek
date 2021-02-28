@@ -14,12 +14,12 @@
 class Record : public Persistent {
     public:
         Record(std::string key_p, std::string value_p);
-        Record(std::ifstream& input, std::streampos pos);
+        Record(std::fstream& input, std::streampos pos);
         Record(std::shared_ptr<std::string> key_p, std::shared_ptr<std::string> value_p);
         Record();
 
-        int write(std::ofstream& output, std::streampos absolute) override;
-        int load(std::ifstream& input, std::streampos absolute) override;
+        int write(std::fstream& output, std::streampos absolute) override;
+        int load(std::fstream& input, std::streampos absolute) override;
         bool equal(const Record& other) const;
         int FileSize() const;
 
@@ -40,13 +40,12 @@ class Record : public Persistent {
         const int kHeaderSize = sizeof(Header);
 
         std::unique_ptr<Header> createHeader();
-        char* headerBegin(std::unique_ptr<Header>& header);
 
         // private member helper functions
         int calculatePaddingSize() const;
 
         template <typename BackInserterT>
-        static void read(std::ifstream& input, int n, BackInserterT insert);
+        static void read(std::fstream& input, int n, BackInserterT insert);
 
         void validateRead(const Checksum_t keyChecksum_fromfile,
             const Checksum_t valChecksum_fromfile);

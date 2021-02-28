@@ -32,7 +32,7 @@ TEST(BasicRecordTest, SaveAndRead)
 {
     const char *filename = "/peekdata/SaveAndRead_data.bin";
 
-    std::ofstream output(filename, std::ios_base::binary);
+    std::fstream output(filename, std::ios_base::binary | std::ios::out);
 
     EXPECT_TRUE(output.is_open());
 
@@ -40,7 +40,7 @@ TEST(BasicRecordTest, SaveAndRead)
     r1.write(output, 0);
 
     output.close();
-    std::ifstream input(filename, std::ios_base::binary);
+    std::fstream input(filename, std::ios_base::binary | std::ios::in);
 
     EXPECT_TRUE(input.is_open());
     // now read from file, see if it works correctly
@@ -60,7 +60,7 @@ TEST(BasicRecordTest, HeaderCorrupt)
 {
     const char *filename = "/peekdata/HeaderCorrupt_data.bin";
     std::vector<char> bad_header(32, 0);
-    std::ofstream output(filename, std::ios_base::binary);
+    std::fstream output(filename, std::ios_base::binary | std::ios::out);
     EXPECT_TRUE(output.is_open());
 
     const char *key = "oaisdfoiajiejieofoeiaoiajesfioef";
@@ -77,7 +77,7 @@ TEST(BasicRecordTest, HeaderCorrupt)
     output.write(bad_header.data(), 16);
     output.close();
 
-    std::ifstream input(filename, std::ios_base::binary);
+    std::fstream input(filename, std::ios_base::binary | std::ios::in);
     EXPECT_TRUE(input.is_open());
 
     try
@@ -98,7 +98,7 @@ TEST(BasicRecordTest, HeaderCorrupt)
 TEST(BasicRecordTest, TwoRecordsSameFile)
 {
     const char *filename = "/peekdata/TwoRecordsSameFile_data.bin";
-    std::ofstream output(filename, std::ios_base::binary);
+    std::fstream output(filename, std::ios_base::binary | std::ios::out);
     EXPECT_TRUE(output.is_open());
 
     const char *key1 = "key1";
@@ -120,7 +120,7 @@ TEST(BasicRecordTest, TwoRecordsSameFile)
     output.close();
 
     // now, open and read both records
-    std::ifstream input(filename, std::ios_base::binary);
+    std::fstream input(filename, std::ios_base::binary | std::ios::in);
     EXPECT_TRUE(input.is_open());
     
     // note the order
