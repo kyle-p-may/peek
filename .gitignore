@@ -1,1 +1,5 @@
-bazel-*/
+bazel-bin
+bazel-out
+bazel-peekbuild
+bazel-testlogs
+.vscode/

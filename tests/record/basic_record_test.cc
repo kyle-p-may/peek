@@ -10,7 +10,8 @@
 #include "peeklib/storage/exceptions.h"
 #include "peeklib/storage/record.h"
 
-TEST(BasicRecordTest, WillConstructKv) {
+TEST(BasicRecordTest, WillConstructKv)
+{
     Record r1("hello", "world");
 
     auto k = std::make_shared<std::string>("hello");
@@ -27,8 +28,9 @@ TEST(BasicRecordTest, WillConstructKv) {
     ASSERT_TRUE(r2.equal(r1));
 }
 
-TEST(BasicRecordTest, SaveAndRead) {
-    const char* filename = "/peekdata/SaveAndRead_data.bin";
+TEST(BasicRecordTest, SaveAndRead)
+{
+    const char *filename = "/peekdata/SaveAndRead_data.bin";
 
     std::ofstream output(filename, std::ios_base::binary);
 
@@ -54,14 +56,15 @@ TEST(BasicRecordTest, SaveAndRead) {
     EXPECT_TRUE(size == peek::storage::kBlockSize);
 }
 
-TEST(BasicRecordTest, HeaderCorrupt) {
-    const char* filename = "/peekdata/HeaderCorrupt_data.bin";
+TEST(BasicRecordTest, HeaderCorrupt)
+{
+    const char *filename = "/peekdata/HeaderCorrupt_data.bin";
     std::vector<char> bad_header(32, 0);
     std::ofstream output(filename, std::ios_base::binary);
     EXPECT_TRUE(output.is_open());
 
-    const char* key = "oaisdfoiajiejieofoeiaoiajesfioef";
-    const char* value = "aoisdfoaienrtsiourggggoaisdfoiasedfijoef";
+    const char *key = "oaisdfoiajiejieofoeiaoiajesfioef";
+    const char *value = "aoisdfoaienrtsiourggggoaisdfoiasedfijoef";
     auto key_p = std::make_shared<std::string>(key);
     auto val_p = std::make_shared<std::string>(value);
 
@@ -77,12 +80,54 @@ TEST(BasicRecordTest, HeaderCorrupt) {
     std::ifstream input(filename, std::ios_base::binary);
     EXPECT_TRUE(input.is_open());
 
-    try {
+    try
+    {
         Record r2(input, 0);
         FAIL() << "Expected corrupted data exception";
-    } catch (peek::storage::CorruptedData& e) {
+    }
+    catch (peek::storage::CorruptedData &e)
+    {
         std::cout << "correct" << std::endl;
-    } catch(...) {
+    }
+    catch (...)
+    {
         FAIL() << "wrong exception thrown";
     }
+}
+
+TEST(BasicRecordTest, TwoRecordsSameFile)
+{
+    const char *filename = "/peekdata/TwoRecordsSameFile_data.bin";
+    std::ofstream output(filename, std::ios_base::binary);
+    EXPECT_TRUE(output.is_open());
+
+    const char *key1 = "key1";
+    const char *value1 = "value1";
+    const char *key2 = "key2";
+    const char *value2 = "value2";
+
+    auto key1_p = std::make_shared<std::string>(key1);
+    auto value1_p = std::make_shared<std::string>(value1);
+
+    auto key2_p = std::make_shared<std::string>(key2);
+    auto value2_p = std::make_shared<std::string>(value2);
+
+    std::streampos write_pos1 = 0;
+    Record r1(key1_p, value1_p);
+    Record r2(key2_p, value2_p);
+    std::streampos write_pos2 = r1.write(output, write_pos1);
+    (void)r2.write(output, write_pos2);
+    output.close();
+
+    // now, open and read both records
+    std::ifstream input(filename, std::ios_base::binary);
+    EXPECT_TRUE(input.is_open());
+    
+    // note the order
+    Record r3(input, write_pos2); 
+    Record r4(input, write_pos1);
+    input.close();
+
+    ASSERT_TRUE(r1.equal(r4));
+    ASSERT_TRUE(r2.equal(r3));
 }

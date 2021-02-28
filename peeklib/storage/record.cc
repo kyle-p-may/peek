@@ -95,6 +95,10 @@ void Record::read(std::ifstream& input, int n, BackInserterT insert)
 int
 Record::write(std::ofstream& output, std::streampos absolute)
 {
+    if (!output.is_open()) {
+        throw peek::storage::FailedWrite("Error: Record::write stream not open");
+    }
+
     char header[kHeaderSize];
     const Checksum_t keyChecksum = CRC32::Calculate(key->begin(), key->end());
     const Checksum_t valChecksum = CRC32::Calculate(value->begin(), value->end());
@@ -110,6 +114,8 @@ Record::write(std::ofstream& output, std::streampos absolute)
 
         output.write(value->c_str(), value->size());
         output.write((char*)(&valChecksum), sizeof(valChecksum));
+
+        output.flush();
 
     } catch (std::ios_base::failure& e) {
         throw peek::storage::FailedWrite("Error: failed record write");
@@ -194,13 +200,12 @@ Record::parseHeader(const char* const header) {
 
     auto headerChecksum = CRC32::Calculate(header, header + kCheckPos);
 
-    auto log_header = [&]() {
-        std::ostringstream out;
+    auto log_header = [&](std::ostream& out) {
         out << "header checksum" << std::endl <<
             "from file: " << headerChecksum_fromfile << std::endl <<
             "just now: " << headerChecksum << std::endl;
-        return out.str();
-    }; Debug::log(log_header);
+    };
+    Debug::log(log_header);
 
     if (headerChecksum  != headerChecksum_fromfile) {
         throw peek::storage::CorruptedData("Error: header corrupted");

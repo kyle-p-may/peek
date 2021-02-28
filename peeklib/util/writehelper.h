@@ -7,9 +7,17 @@ namespace peek{
 namespace util{
 
     template <typename T>
-    T* index(const char* const ptr, int offset)
+    const T* index(const char* const ptr, int offset)
     {
-        return (T*) (ptr + offset);
+        const char* const pos = ptr + offset;
+        return reinterpret_cast<const T*>(pos);
+    }
+
+    template <typename T>
+    T* index(char* const ptr, int offset)
+    {
+        char* const pos = ptr + offset;
+        return reinterpret_cast<T*>(pos);
     }
 
 }
