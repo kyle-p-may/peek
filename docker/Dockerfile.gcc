@@ -1,4 +1,4 @@
-FROM l.gcr.io/google/bazel:latest AS peekbuild
+FROM gcc:10.2.0 AS peekbuild
 RUN apt-get update \
     && apt-get --assume-yes install \
         build-essential \
@@ -7,12 +7,14 @@ RUN apt-get update \
         pkg-config \
         vim \
         curl \
-        g++\
+        openjdk-11-jdk\
     && curl -LO https://github.com/protocolbuffers/protobuf/releases/download/v3.13.0/protoc-3.13.0-linux-x86_64.zip \
     && mkdir /protoc_install \
     && unzip protoc-3.13.0-linux-x86_64.zip -d /protoc_install\
-    && g++ --version\
-    && mkdir /peekdata
+    && wget https://github.com/bazelbuild/bazel/releases/download/4.0.0/bazel-4.0.0-installer-linux-x86_64.sh -P / \
+    && chmod +x /bazel-4.0.0-installer-linux-x86_64.sh\
+    && /bazel-4.0.0-installer-linux-x86_64.sh \
+    && rm /bazel-4.0.0-installer-linux-x86_64.sh
 ENV PATH="/protoc_install/bin:${PATH}"
 ENV BAZEL_CXXOPTS="-std=c++17"
 ENV CC="gcc"
