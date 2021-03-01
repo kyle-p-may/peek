@@ -4,8 +4,8 @@
 namespace peek {
 namespace storage{
 
-    const int kBlockSize = 512;
-    const int kSoftMaxFileSize = 20 * kBlockSize;
+  const int kBlockSize = 512;
+  const int kSoftMaxFileSize = 20 * kBlockSize;
 
 }
 }
