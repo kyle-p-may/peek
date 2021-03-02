@@ -3,34 +3,37 @@
 #include <memory>
 #include <mutex>
 
+#include "peeklib/storage/index.h"
 #include "peeklib/util/access.h"
 
-WriteAccess IndexMap::requestWrite(std::shared_ptr<Key> key) {
+using namespace peek::util;
+
+Guard<Unique<Index>> IndexMap::requestWrite(std::shared_ptr<Key> key) {
   IndexPtr p;
   {
     std::lock_guard<std::mutex> guard(m);
 
     if (map.count(*key) == 0) {
-      return peek::util::makeEmpty<WriteAccess>();
+      return Guard<Unique<Index>>(nullptr);
     } else {
       p = map[*key];
     }
   }
 
-  return std::make_pair(p->acquireWriteLock(), p);
+  return Guard<Unique<Index>>(p);
 }
 
-ReadAccess IndexMap::requestRead(std::shared_ptr<Key> key) {
+Guard<Shared<Index>> IndexMap::requestRead(std::shared_ptr<Key> key) {
   IndexPtr p;
   {
     std::lock_guard<std::mutex> guard(m);
 
     if (map.count(*key) == 0) {
-      return peek::util::makeEmpty<ReadAccess>();
+      return Guard<Shared<Index>>(nullptr);
     } else {
       p = map[*key];
     }
   }
 
-  return std::make_pair(p->acquireReadLock(), p);
+  return Guard<Shared<Index>>(p);
 }

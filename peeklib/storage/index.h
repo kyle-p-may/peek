@@ -9,10 +9,11 @@
 
 #include "peeklib/storage/file.h"
 #include "peeklib/storage/value.h"
+#include "peeklib/util/access.h"
 
 using namespace peek;
 
-class Index {
+class Index : public util::LockableResource {
   public:
     Index(FileId fid_p, std::streampos location_p, std::shared_ptr<Value> data_p);
 
@@ -20,14 +21,12 @@ class Index {
     void addData(std::shared_ptr<Value> data_p);
     bool empty() const;
 
-    std::shared_lock<std::shared_mutex> acquireReadLock();
-    std::unique_lock<std::shared_mutex> acquireWriteLock();
+    std::shared_ptr<Value> read();
 
   private:
     FileId fid;
     std::streampos location;
     std::shared_ptr<std::string> data;
-    std::shared_mutex m;
 };
 
 using IndexPtr = std::shared_ptr<Index>;

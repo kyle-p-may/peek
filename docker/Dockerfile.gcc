@@ -14,7 +14,8 @@ RUN apt-get update \
     && wget https://github.com/bazelbuild/bazel/releases/download/4.0.0/bazel-4.0.0-installer-linux-x86_64.sh -P / \
     && chmod +x /bazel-4.0.0-installer-linux-x86_64.sh\
     && /bazel-4.0.0-installer-linux-x86_64.sh \
-    && rm /bazel-4.0.0-installer-linux-x86_64.sh
+    && rm /bazel-4.0.0-installer-linux-x86_64.sh \
+    && mkdir /peekdata
 ENV PATH="/protoc_install/bin:${PATH}"
 ENV BAZEL_CXXOPTS="-std=c++17"
 ENV CC="gcc"

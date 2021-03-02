@@ -7,9 +7,10 @@
 #include <shared_mutex>
 
 #include "peeklib/storage/file.h"
+#include "peeklib/storage/value.h"
 
 Index::Index(FileId fid_p, std::streampos location_p, std::shared_ptr<std::string> data_p)
-: fid(fid_p), location(location_p), data(data_p), m()
+: fid(fid_p), location(location_p), data(data_p)
 { }
 
 void Index::flushData() {
@@ -26,10 +27,6 @@ bool Index::empty() const {
   return data == nullptr;
 }
 
-std::shared_lock<std::shared_mutex> Index::acquireReadLock() {
-  return std::shared_lock<std::shared_mutex>(m);
-}
-
-std::unique_lock<std::shared_mutex> Index::acquireWriteLock() {
-  return std::unique_lock<std::shared_mutex>(m);
+std::shared_ptr<Value> Index::read() {
+  return data;
 }
