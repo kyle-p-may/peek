@@ -1,18 +1,24 @@
 #ifndef PEEKLIB_STORAGE_STREAMMANAGER_H
 #define PEEKLIB_STORAGE_STREAMMANAGER_H
 
+#include <cassert>
 #include <ios>
 #include <iostream>
 #include <fstream>
 #include <mutex>
 
 #include "peeklib/storage/file.h"
+#include "peeklib/util/access.h"
 
-class StreamManager {
+class StreamManager : public peek::util::LockableResource {
   public:
-    StreamManager(std::fstream& stream_p, FileId fid_p, std::mutex& m)
-    : stream(stream_p), fid(fid_p), guard(m)
-    { }
+    StreamManager(const std::string& filename, FileId fid_p)
+    : peek::util::LockableResource()
+    , stream(filename, std::ios::binary | std::ios::out | std::ios::in)
+    , fid(fid_p)
+    {
+      assert(stream.is_open());
+    }
 
     // StreamOperation takes a single fstream reference
     // as an input
@@ -21,7 +27,7 @@ class StreamManager {
       return op(stream);
     }
 
-    FileId Id() const {
+    FileId id() const {
       return fid;
     }
 
@@ -29,10 +35,28 @@ class StreamManager {
       stream.close();
     }
 
+    std::streampos Size() {
+      assert(stream.is_open());
+
+      stream.seekg(0, std::ios::end);
+
+      return stream.tellg();
+    }
+
+    StreamManager(const StreamManager&) = delete;
+    StreamManager& operator=(const StreamManager&) = delete;
+
+    static void touch(const std::string& filename) {
+      // this creates the file on the file system
+      // we need to call touch on new file names
+      std::ofstream s(filename);
+      assert(s.is_open());
+      s.close();
+    }
+
   private:
-    std::fstream& stream;
+    std::fstream stream;
     FileId fid;
-    std::lock_guard<std::mutex> guard;
 };
 
 #endif // PEEKLIB_STORAGE_STREAMMANAGER_H

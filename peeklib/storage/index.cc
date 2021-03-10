@@ -8,9 +8,11 @@
 
 #include "peeklib/storage/file.h"
 #include "peeklib/storage/value.h"
+#include "peeklib/util/access.h"
 
 Index::Index(FileId fid_p, std::streampos location_p, std::shared_ptr<std::string> data_p)
-: fid(fid_p), location(location_p), data(data_p)
+: peek::util::LockableResource()
+, fid(fid_p), location(location_p), data(data_p)
 { }
 
 void Index::flushData() {

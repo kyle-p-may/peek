@@ -3,6 +3,7 @@
 
 #include <cassert>
 #include <memory>
+#include <shared_mutex>
 #include <utility>
 
 namespace peek {
@@ -62,6 +63,11 @@ namespace util{
       }
 
       typename ResourcePolicy::type& Resource() {
+        assert(r);
+        return *r;
+      }
+
+      const typename ResourcePolicy::type& Resource() {
         assert(r);
         return *r;
       }
