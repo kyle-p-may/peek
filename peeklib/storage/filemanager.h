@@ -19,11 +19,11 @@ class FileManager {
 
     // get read/write permission for certain file id
     // used when reading old key or updated old key
-    Guard<Unique<StreamManager>> getPermission(FileId fid);
+    GuardPtr<Unique<StreamManager>> getPermission(FileId fid);
 
     // get read/write permission for the largest valid file id
     // used when adding new key
-    Guard<Unique<StreamManager>> getPermission();
+    GuardPtr<Unique<StreamManager>> getPermission();
 
   private:
     FileId current_file_id;
@@ -32,8 +32,9 @@ class FileManager {
     peek::storage::FilenameGenerator g;
 
     void init(const std::vector<FileId>& valid_fids_p);
-    void addFile(FileId file);
+    void addFile(FileId fid);
     std::shared_ptr<StreamManager>& access(FileId fid);
+    void createFileForFirstTime(FileId fid);
 };
 
 #endif // PEEKLIB_STORAGE_RECORDMANAGER_H

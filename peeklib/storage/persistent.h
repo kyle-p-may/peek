@@ -12,14 +12,14 @@ class Persistent {
       auto action = [&](std::fstream& stream) {
         return this->write(stream, absolute);
       };
-      return man.perform<int>(action);
+      return man.perform(action);
     }
 
     virtual int load(StreamManager& man, std::streampos absolute) {
       auto action = [&](std::fstream& stream) {
         return this->load(stream, absolute);
       };
-      return man.perform<int>(action);
+      return man.perform(action);
     }
 
     virtual int write(std::fstream& output, std::streampos absolute) = 0;

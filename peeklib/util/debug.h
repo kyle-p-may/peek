@@ -2,8 +2,10 @@
 #define PEEKLIB_UTIL_DEBUG_H
 
 #include <iostream>
+#include <fstream>
 #include <mutex>
 #include <sstream>
+#include <thread>
 
 /**
  * Action must take one parameter, a stream
@@ -20,7 +22,9 @@ class Debug {
 
       {
         std::lock_guard<std::mutex> guard(log_mutex);
+        l.stream << std::this_thread::get_id() << ":" << std::endl;
         l.stream << temp_out.str();
+        l.stream.flush();
       }
     }
 
@@ -32,6 +36,7 @@ class Debug {
         {
           assert(stream.is_open());
           stream << "========================" << std::endl;
+          stream.flush();
         }
 
         std::ofstream stream;

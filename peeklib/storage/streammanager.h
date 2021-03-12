@@ -22,8 +22,8 @@ class StreamManager : public peek::util::LockableResource {
 
     // StreamOperation takes a single fstream reference
     // as an input
-    template <typename RetVal, typename StreamOperation>
-    RetVal perform(StreamOperation op) {
+    template <typename StreamOperation>
+    auto perform(StreamOperation op) {
       return op(stream);
     }
 
@@ -37,9 +37,7 @@ class StreamManager : public peek::util::LockableResource {
 
     std::streampos Size() {
       assert(stream.is_open());
-
       stream.seekg(0, std::ios::end);
-
       return stream.tellg();
     }
 

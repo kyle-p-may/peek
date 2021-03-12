@@ -2,9 +2,12 @@
 #define PEEKLIB_UTIL_BUILDER_H
 
 #include <cassert>
+#include <iostream>
 #include <memory>
 #include <shared_mutex>
 #include <utility>
+
+#include "peeklib/util/debug.h"
 
 namespace peek {
 namespace util{
@@ -53,22 +56,23 @@ namespace util{
       {
         if (r) {
           ResourcePolicy::acquire(*r);  
+          Debug::log([](auto& out) { out << "Guard::acquired" << std::endl; });
         }
       }
 
       ~Guard() {
         if (r) {
           ResourcePolicy::release(*r);
+          Debug::log([](auto& out) { out << "Guard::released" << std::endl; });
         }
       }
 
-      typename ResourcePolicy::type& Resource() {
-        assert(r);
-        return *r;
+      template <typename ResourceAction>
+      auto UseResource(ResourceAction a) {
+        return a(r.get());
       }
 
-      const typename ResourcePolicy::type& Resource() {
-        assert(r);
+      const typename ResourcePolicy::type& Resource() const {
         return *r;
       }
 
@@ -76,9 +80,15 @@ namespace util{
         return r == nullptr;
       }
 
+      Guard(const Guard&) = delete;
+      Guard& operator=(Guard&) = delete;
+
     private:
       std::shared_ptr<typename ResourcePolicy::type> r;
   };
+
+template <typename ResourcePolicy>
+using GuardPtr = std::unique_ptr<Guard<ResourcePolicy>>;
 
 }
 }

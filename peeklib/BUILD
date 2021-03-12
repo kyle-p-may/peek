@@ -6,9 +6,12 @@ cc_library(
     srcs = glob(["storage/*"]) + glob(["util/*"]),
 
     hdrs = [
-        "storage/record.h",
-        "util/crc.h",
+        "storage/file.h",
+        "storage/filemanager.h",
         "storage/logentry.h",
+        "storage/record.h",
+        "util/access.h",
+        "util/crc.h",
     ],
 
     visibility = [
